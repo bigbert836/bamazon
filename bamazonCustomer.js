@@ -12,6 +12,9 @@ var connect = mysql.createConnection({
 	database: 'bamazon'
 });
 
+// global variable for last item id
+var lastItem = 0;
+
 // global variable for shoping cart array
 var cart = [];
 // global variable for shoping cart total
@@ -28,7 +31,8 @@ function showProducts() {
         if(err) throw err;
         console.log("Bamazon Products");
         for(var i = 0; i < res.length; i++){
-        	console.log("Item # " + res[i].item_id + " - " + res[i].product_name + " $" + res[i].price);      	
+        	console.log("Item # " + res[i].item_id + " - " + res[i].product_name + " $" + res[i].price);
+        	lastItem = i;      	
         }
         selectItem();
     });
@@ -43,18 +47,21 @@ var selectItem = function(){
 		type: "input"
 	}
 	]).then(function(answers){
-		connect.query("SELECT product_name, price, stock_quantity FROM products WHERE item_id =" + answers.item, function(err,res){
-			if(err){
-				// if invalid imput, prompt again
-				console.log("Invalid item number.");
-				selectItem();
-			}
-			console.log(res[0].product_name + " $" + res[0].price);
-			var product = res[0].product_name;
-			var price = res[0].price;
-			var quantity = res[0].stock_quantity;
-			selectQuantity(product, price, quantity);
-		});
+		if(parseFloat(answers.item) <= lastItem){
+			connect.query("SELECT product_name, price, stock_quantity FROM products WHERE item_id =" + answers.item, function(err,res){
+				if(err) throw err;
+				console.log(res[0].product_name + " $" + res[0].price);
+				var product = res[0].product_name;
+				var price = res[0].price;
+				var quantity = res[0].stock_quantity;
+				selectQuantity(product, price, quantity);
+			});
+		} else{
+			// prompt the user to select a different item
+			console.log("Invalid item number.");
+			selectItem();
+		}
+		
 	})
 };
 
